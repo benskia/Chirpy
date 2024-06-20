@@ -1,15 +1,9 @@
 package main
 
 import (
-	"log"
-	"net/http"
+	"github.com/benskia/Chirpy/internal/chirpyserver"
 )
 
 func main() {
-	const localHost string = "localhost:8080"
-	mux := http.NewServeMux()
-	srv := http.Server{Handler: mux, Addr: localHost}
-	if err := srv.ListenAndServe(); err != nil {
-		log.Fatal(err)
-	}
+	chirpyserver.StartChirpyServer()
 }
