@@ -44,7 +44,16 @@ func (cfg *apiConfig) resetHandle(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, err := w.Write([]byte("Fileserver hit counter has been reset."))
 	if err != nil {
-		log.Println("/reset failed to write body data")
+		log.Println("Error handling /reset : ", err)
+	}
+}
+
+func readinessHandle(w http.ResponseWriter, _ *http.Request) {
+	w.Header()["Content-Type"] = []string{"text/plain; charset=utf-8"}
+	w.WriteHeader(http.StatusOK)
+	_, err := w.Write([]byte("OK"))
+	if err != nil {
+		log.Println("Error handling /healthz : ", err)
 	}
 }
 
@@ -60,14 +69,5 @@ func StartChirpyServer() {
 	srv := &http.Server{Handler: mux, Addr: localHost}
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal(err)
-	}
-}
-
-func readinessHandle(w http.ResponseWriter, _ *http.Request) {
-	w.Header()["Content-Type"] = []string{"text/plain; charset=utf-8"}
-	w.WriteHeader(http.StatusOK)
-	_, err := w.Write([]byte("OK"))
-	if err != nil {
-		log.Println("/healthz failed to write body data")
 	}
 }
