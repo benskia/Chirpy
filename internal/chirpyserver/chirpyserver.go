@@ -2,9 +2,11 @@ package chirpyserver
 
 import (
 	"encoding/json"
+	"errors"
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
 )
 
 const (
@@ -103,6 +105,29 @@ func validateChirpHandle(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(dat)
+}
+
+func cleanChirp(chirp string) (string, error) {
+	if len(chirp) == 0 {
+		return chirp, errors.New("chirp body was empty")
+	}
+	badWords := map[string]struct{}{
+		"kerfuffle": {},
+		"sharbert":  {},
+		"fornax":    {},
+	}
+	cleanedWords := []string{}
+	splitChirp := strings.Split(chirp, " ")
+	for _, word := range splitChirp {
+		normalizedWord := strings.ToLower(word)
+		if _, ok := badWords[normalizedWord]; ok {
+			stars := strings.Repeat("*", len(normalizedWord))
+			cleanedWords = append(cleanedWords, stars)
+			continue
+		}
+		cleanedWords = append(cleanedWords, word)
+	}
+	return strings.Join(cleanedWords, " "), nil
 }
 
 func readinessHandle(w http.ResponseWriter, _ *http.Request) {
