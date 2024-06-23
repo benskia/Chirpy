@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -50,8 +51,11 @@ func (cfg *apiConfig) resetHandle(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-func validateChirpHandle(w http.ResponseWriter, r *http.Request) {
+// API/CHIRPS
+
+func postChirps(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
+		ID   int    `json:"id"`
 		Body string `json:"body"`
 	}
 
@@ -75,6 +79,8 @@ func validateChirpHandle(w http.ResponseWriter, r *http.Request) {
 	cleanedBody := cleanChirp(params.Body)
 	payload := map[string]string{"cleaned_body": cleanedBody}
 	respondWithJSON(w, http.StatusOK, payload)
+	chirpJSON, _ := json.Marshal(params)
+	err = os.WriteFile("database.json", chirpJSON, 0644)
 }
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
@@ -122,6 +128,8 @@ func cleanChirp(chirp string) string {
 	return strings.Join(cleanedWords, " ")
 }
 
+// API/HEALTHZ
+
 func readinessHandle(w http.ResponseWriter, _ *http.Request) {
 	w.Header()["Content-Type"] = []string{"text/plain; charset=utf-8"}
 	w.WriteHeader(http.StatusOK)
@@ -136,10 +144,11 @@ func StartChirpyServer() {
 	handler := http.StripPrefix("/app", http.FileServer(http.Dir(websitePath)))
 	mux := http.NewServeMux()
 	mux.Handle("GET /app/*", apiCfg.middlewareMetricsInc(handler))
-	mux.HandleFunc("GET /api/healthz", readinessHandle)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.metricsHandle)
 	mux.HandleFunc("GET /api/reset", apiCfg.resetHandle)
-	mux.HandleFunc("POST /api/validate_chirp", validateChirpHandle)
+	mux.HandleFunc("GET /api/healthz", readinessHandle)
+	// mux.HandleFunc("GET /api/chirps", postChirps)
+	mux.HandleFunc("POST /api/chirps", postChirps)
 
 	srv := &http.Server{Handler: mux, Addr: localHost}
 	if err := srv.ListenAndServe(); err != nil {
