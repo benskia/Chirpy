@@ -2,7 +2,6 @@ package chirpyserver
 
 import (
 	"encoding/json"
-	"errors"
 	"html/template"
 	"log"
 	"net/http"
@@ -52,64 +51,58 @@ func (cfg *apiConfig) resetHandle(w http.ResponseWriter, _ *http.Request) {
 }
 
 func validateChirpHandle(w http.ResponseWriter, r *http.Request) {
-	type failResponse struct {
-		Error string `json:"error"`
-	}
-	type successResponse struct {
-		Valid bool `json:"valid"`
-	}
 	type parameters struct {
 		Body string `json:"body"`
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
-	fail := failResponse{}
 	err := decoder.Decode(&params)
 	if err != nil {
 		log.Println("Error decoding parameters: ", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		fail.Error = "Something went wrong"
-		dat, err := json.Marshal(fail)
-		if err != nil {
-			log.Println("Error marshalling JSON: ", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.Write(dat)
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong")
 		return
 	}
 
 	if len(params.Body) > 140 {
-		log.Println("Chirp is too long")
-		w.WriteHeader(http.StatusBadRequest)
-		fail.Error = "Chirp is too long"
-		dat, err := json.Marshal(fail)
-		if err != nil {
-			log.Println("Error marshalling JSON: ", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.Write(dat)
+		msg := "Chirp is too long"
+		log.Println(msg)
+		respondWithError(w, http.StatusBadRequest, msg)
 		return
 	}
 
-	success := successResponse{true}
-	dat, err := json.Marshal(success)
+	cleanedBody := cleanChirp(params.Body)
+	payload := map[string]string{"cleaned_body": cleanedBody}
+	respondWithJSON(w, http.StatusOK, payload)
+}
+
+func respondWithError(w http.ResponseWriter, code int, msg string) {
+	type failResponse struct {
+		Error string `json:"error"`
+	}
+	response := failResponse{msg}
+	dat, err := json.Marshal(response)
 	if err != nil {
 		log.Println("Error marshalling JSON: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(code)
 	w.Write(dat)
 }
 
-func cleanChirp(chirp string) (string, error) {
+func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	w.WriteHeader(code)
+	if err := json.NewEncoder(w).Encode(payload); err != nil {
+		log.Println("Error encoding payload: ", err)
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong")
+	}
+}
+
+func cleanChirp(chirp string) string {
 	if len(chirp) == 0 {
-		return chirp, errors.New("chirp body was empty")
+		return chirp
 	}
 	badWords := map[string]struct{}{
 		"kerfuffle": {},
@@ -121,13 +114,12 @@ func cleanChirp(chirp string) (string, error) {
 	for _, word := range splitChirp {
 		normalizedWord := strings.ToLower(word)
 		if _, ok := badWords[normalizedWord]; ok {
-			stars := strings.Repeat("*", len(normalizedWord))
-			cleanedWords = append(cleanedWords, stars)
+			cleanedWords = append(cleanedWords, "****")
 			continue
 		}
 		cleanedWords = append(cleanedWords, word)
 	}
-	return strings.Join(cleanedWords, " "), nil
+	return strings.Join(cleanedWords, " ")
 }
 
 func readinessHandle(w http.ResponseWriter, _ *http.Request) {
