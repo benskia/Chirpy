@@ -1,7 +1,10 @@
 package database
 
 import (
+	"errors"
+	"io/fs"
 	"log"
+	"os"
 	"sort"
 	"sync"
 )
@@ -21,10 +24,15 @@ type Chirp struct {
 }
 
 func NewDB(path string) (*DB, error) {
-	return &DB{
+	db := &DB{
 		path: path,
 		mux:  &sync.RWMutex{},
-	}, nil
+	}
+	err := db.ensureDB()
+	if err != nil {
+		log.Fatal("Error creating database connection: ", err)
+	}
+	return db, err
 }
 
 func (db *DB) CreateChirp(body string) (Chirp, error) {
@@ -34,9 +42,11 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 }
 
 func (db *DB) GetChirps(body string) ([]Chirp, error) {
+	db.mux.RLock()
 	loadedDB, err := db.loadDB()
+	db.mux.RUnlock()
 	if err != nil {
-		log.Println("Error loading database: ", err)
+		return []Chirp{}, err
 	}
 	chirps := []Chirp{}
 	for index, chirp := range loadedDB.Chirps {
@@ -49,7 +59,11 @@ func (db *DB) GetChirps(body string) ([]Chirp, error) {
 }
 
 func (db *DB) ensureDB() error {
-	return nil
+	f, err := os.OpenFile(db.path, os.O_RDONLY|os.O_CREATE, 0644)
+	if err != nil {
+		return err
+	}
+	return f.Close()
 }
 
 func (db *DB) loadDB() (DBStructure, error) {
