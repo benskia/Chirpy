@@ -1,6 +1,10 @@
 package database
 
-import "sync"
+import (
+	"log"
+	"sort"
+	"sync"
+)
 
 type DB struct {
 	path string
@@ -12,19 +16,36 @@ type DBStructure struct {
 }
 
 type Chirp struct {
+	ID   int    `json:"id"`
 	Body string `json:"body"`
 }
 
 func NewDB(path string) (*DB, error) {
-	return nil, nil
+	return &DB{
+		path: path,
+		mux:  &sync.RWMutex{},
+	}, nil
 }
 
 func (db *DB) CreateChirp(body string) (Chirp, error) {
-	return Chirp{}, nil
+	return Chirp{
+		Body: body,
+	}, nil
 }
 
 func (db *DB) GetChirps(body string) ([]Chirp, error) {
-	return []Chirp{}, nil
+	loadedDB, err := db.loadDB()
+	if err != nil {
+		log.Println("Error loading database: ", err)
+	}
+	chirps := []Chirp{}
+	for index, chirp := range loadedDB.Chirps {
+		chirps = append(chirps, Chirp{index, chirp.Body})
+	}
+	sort.Slice(chirps, func(i, j int) bool {
+		return chirps[i].ID < chirps[j].ID
+	})
+	return chirps, nil
 }
 
 func (db *DB) ensureDB() error {

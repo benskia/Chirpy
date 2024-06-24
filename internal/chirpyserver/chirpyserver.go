@@ -17,10 +17,11 @@ const (
 
 type apiConfig struct {
 	fileserverHits int
+	chirpIdCounter int
 }
 
 func NewApiConfig() *apiConfig {
-	return &apiConfig{0}
+	return &apiConfig{0, 1}
 }
 
 func (cfg *apiConfig) GetHits() int {
@@ -53,6 +54,10 @@ func (cfg *apiConfig) resetHandle(w http.ResponseWriter, _ *http.Request) {
 
 // API/CHIRPS
 
+func getChirps(w http.ResponseWriter, r *http.Request) {
+	return
+}
+
 func postChirps(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		ID   int    `json:"id"`
@@ -79,8 +84,6 @@ func postChirps(w http.ResponseWriter, r *http.Request) {
 	cleanedBody := cleanChirp(params.Body)
 	payload := map[string]string{"cleaned_body": cleanedBody}
 	respondWithJSON(w, http.StatusOK, payload)
-	chirpJSON, _ := json.Marshal(params)
-	err = os.WriteFile("database.json", chirpJSON, 0644)
 }
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
@@ -147,7 +150,7 @@ func StartChirpyServer() {
 	mux.HandleFunc("GET /admin/metrics", apiCfg.metricsHandle)
 	mux.HandleFunc("GET /api/reset", apiCfg.resetHandle)
 	mux.HandleFunc("GET /api/healthz", readinessHandle)
-	// mux.HandleFunc("GET /api/chirps", postChirps)
+	mux.HandleFunc("GET /api/chirps", getChirps)
 	mux.HandleFunc("POST /api/chirps", postChirps)
 
 	srv := &http.Server{Handler: mux, Addr: localHost}
