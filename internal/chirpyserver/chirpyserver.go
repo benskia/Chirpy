@@ -61,12 +61,24 @@ func (cfg *apiConfig) resetHandle(w http.ResponseWriter, _ *http.Request) {
 func (cfg *apiConfig) getChirps(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	return cfg.db.GetChirps()
+	chirps, err := cfg.db.GetChirps()
+	if err != nil {
+		log.Println("Error retrieving chirps: ", err)
+		return
+	}
+	encodedChirps, err := json.Marshal(chirps)
+	if err != nil {
+		log.Println("Error marshalling chirps: ", err)
+		return
+	}
+	_, err = w.Write(encodedChirps)
+	if err != nil {
+		log.Println("Error writing chirps: ", err)
+	}
 }
 
-func postChirps(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) postChirp(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		ID   int    `json:"id"`
 		Body string `json:"body"`
 	}
 
@@ -88,6 +100,7 @@ func postChirps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cleanedBody := cleanChirp(params.Body)
+	cfg.db.CreateChirp(cleanedBody)
 	payload := map[string]string{"cleaned_body": cleanedBody}
 	respondWithJSON(w, http.StatusOK, payload)
 }
@@ -154,8 +167,8 @@ func StartChirpyServer() {
 	mux.HandleFunc("GET /admin/metrics", apiCfg.metricsHandle)
 	mux.HandleFunc("GET /api/reset", apiCfg.resetHandle)
 	mux.HandleFunc("GET /api/healthz", readinessHandle)
-	mux.HandleFunc("GET /api/chirps", getChirps)
-	mux.HandleFunc("POST /api/chirps", postChirps)
+	mux.HandleFunc("GET /api/chirps", apiCfg.getChirps)
+	mux.HandleFunc("POST /api/chirps", apiCfg.postChirp)
 
 	srv := &http.Server{Handler: mux, Addr: localHost}
 	if err := srv.ListenAndServe(); err != nil {
