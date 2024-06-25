@@ -2,6 +2,8 @@ package database
 
 import (
 	"encoding/json"
+	"errors"
+	"log"
 	"os"
 	"sort"
 	"sync"
@@ -41,7 +43,10 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 	}
 	dbStructure.Chirps[index] = newChirp
 	err = db.writeDB(dbStructure)
-	return newChirp, err
+	if err != nil {
+		return Chirp{}, err
+	}
+	return newChirp, nil
 }
 
 func (db *DB) GetChirps() ([]Chirp, error) {
@@ -62,14 +67,16 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 }
 
 func (db *DB) ensureDB() error {
-	f, err := os.OpenFile(db.path, os.O_RDONLY|os.O_CREATE, 0644)
-	if err != nil {
-		return err
+	_, err := os.Stat(db.path)
+	if errors.Is(err, os.ErrNotExist) {
+		db.writeDB(DBStructure{Chirps: map[int]Chirp{}})
+		return nil
 	}
-	return f.Close()
+	return err
 }
 
 func (db *DB) loadDB() (DBStructure, error) {
+	log.Println("Reading from database...")
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	dbStructure := DBStructure{}
@@ -82,6 +89,7 @@ func (db *DB) loadDB() (DBStructure, error) {
 }
 
 func (db *DB) writeDB(dbStructure DBStructure) error {
+	log.Println("Writing to database...")
 	db.mux.Lock()
 	defer db.mux.Unlock()
 	dbToWrite, err := json.Marshal(dbStructure)
