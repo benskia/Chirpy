@@ -1,8 +1,7 @@
 package database
 
 import (
-	"errors"
-	"io/fs"
+	"encoding/json"
 	"log"
 	"os"
 	"sort"
@@ -28,15 +27,12 @@ func NewDB(path string) (*DB, error) {
 		path: path,
 		mux:  &sync.RWMutex{},
 	}
-	err := db.ensureDB()
-	if err != nil {
-		log.Fatal("Error creating database connection: ", err)
-	}
-	return db, err
+	return db, db.ensureDB()
 }
 
 func (db *DB) CreateChirp(body string) (Chirp, error) {
 	return Chirp{
+		ID:   0,
 		Body: body,
 	}, nil
 }
@@ -67,7 +63,13 @@ func (db *DB) ensureDB() error {
 }
 
 func (db *DB) loadDB() (DBStructure, error) {
-	return DBStructure{}, nil
+	dbStructure := DBStructure{}
+	f, err := os.ReadFile(db.path)
+	if err != nil {
+		return dbStructure, err
+	}
+	err = json.Unmarshal(f, dbStructure)
+	return dbStructure, err
 }
 
 func (db *DB) writeDB(dbStructure DBStructure) error {
