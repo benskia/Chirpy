@@ -73,5 +73,11 @@ func (db *DB) loadDB() (DBStructure, error) {
 }
 
 func (db *DB) writeDB(dbStructure DBStructure) error {
-	return nil
+	db.mux.Lock()
+	dbToWrite, err := json.Marshal(dbStructure)
+	db.mux.Unlock()
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(db.path, dbToWrite, 0644)
 }
