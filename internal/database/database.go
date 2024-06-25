@@ -44,7 +44,7 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 	return newChirp, err
 }
 
-func (db *DB) GetChirps(body string) ([]Chirp, error) {
+func (db *DB) GetChirps() ([]Chirp, error) {
 	db.mux.RLock()
 	loadedDB, err := db.loadDB()
 	db.mux.RUnlock()

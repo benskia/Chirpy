@@ -58,10 +58,10 @@ func (cfg *apiConfig) resetHandle(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-// API/CHIRPS
-
-func getChirps(w http.ResponseWriter, r *http.Request) {
-	return
+func (cfg *apiConfig) getChirps(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	return cfg.db.GetChirps()
 }
 
 func postChirps(w http.ResponseWriter, r *http.Request) {
@@ -136,8 +136,6 @@ func cleanChirp(chirp string) string {
 	}
 	return strings.Join(cleanedWords, " ")
 }
-
-// API/HEALTHZ
 
 func readinessHandle(w http.ResponseWriter, _ *http.Request) {
 	w.Header()["Content-Type"] = []string{"text/plain; charset=utf-8"}
