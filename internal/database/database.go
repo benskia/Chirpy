@@ -92,11 +92,11 @@ func (db *DB) writeDB(dbStructure DBStructure) error {
 }
 
 func (db *DB) nextIndex(dbStructure DBStructure) int {
-	next := 0
-	for i := range dbStructure.Chirps {
-		if i > next {
-			next = i
+	highestIndex := 0
+	for _, chirp := range dbStructure.Chirps {
+		if chirp.ID > highestIndex {
+			highestIndex = chirp.ID
 		}
 	}
-	return next + 1
+	return highestIndex + 1
 }

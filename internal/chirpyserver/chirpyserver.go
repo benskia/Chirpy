@@ -100,9 +100,12 @@ func (cfg *apiConfig) postChirp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cleanedBody := cleanChirp(params.Body)
-	cfg.db.CreateChirp(cleanedBody)
-	payload := map[string]string{"cleaned_body": cleanedBody}
-	respondWithJSON(w, http.StatusOK, payload)
+	chirp, err := cfg.db.CreateChirp(cleanedBody)
+	if err != nil {
+		log.Println("Error creating chirp: ", err)
+		return
+	}
+	respondWithJSON(w, http.StatusOK, chirp)
 }
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
