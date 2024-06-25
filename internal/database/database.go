@@ -3,7 +3,6 @@ package database
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"os"
 	"sort"
 	"sync"
@@ -36,7 +35,7 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 	if err != nil {
 		return Chirp{}, err
 	}
-	index := db.nextIndex(dbStructure)
+	index := len(dbStructure.Chirps) + 1
 	newChirp := Chirp{
 		ID:   index,
 		Body: body,
@@ -76,7 +75,6 @@ func (db *DB) ensureDB() error {
 }
 
 func (db *DB) loadDB() (DBStructure, error) {
-	log.Println("Reading from database...")
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	dbStructure := DBStructure{}
@@ -89,7 +87,6 @@ func (db *DB) loadDB() (DBStructure, error) {
 }
 
 func (db *DB) writeDB(dbStructure DBStructure) error {
-	log.Println("Writing to database...")
 	db.mux.Lock()
 	defer db.mux.Unlock()
 	dbToWrite, err := json.Marshal(dbStructure)
@@ -97,14 +94,4 @@ func (db *DB) writeDB(dbStructure DBStructure) error {
 		return err
 	}
 	return os.WriteFile(db.path, dbToWrite, 0644)
-}
-
-func (db *DB) nextIndex(dbStructure DBStructure) int {
-	highestIndex := 0
-	for _, chirp := range dbStructure.Chirps {
-		if chirp.ID > highestIndex {
-			highestIndex = chirp.ID
-		}
-	}
-	return highestIndex + 1
 }

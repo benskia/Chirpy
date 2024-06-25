@@ -105,7 +105,7 @@ func (cfg *apiConfig) postChirp(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error creating chirp: ", err)
 		return
 	}
-	respondWithJSON(w, http.StatusOK, chirp)
+	respondWithJSON(w, http.StatusCreated, chirp)
 }
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
