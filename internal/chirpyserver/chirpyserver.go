@@ -5,8 +5,9 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"os"
 	"strings"
+
+	"github.com/benskia/Chirpy/internal/database"
 )
 
 const (
@@ -18,10 +19,15 @@ const (
 type apiConfig struct {
 	fileserverHits int
 	chirpIdCounter int
+	db             *database.DB
 }
 
 func NewApiConfig() *apiConfig {
-	return &apiConfig{0, 1}
+	db, err := database.NewDB("database.json")
+	if err != nil {
+		log.Fatal("Error connecting to database: ", err)
+	}
+	return &apiConfig{0, 1, db}
 }
 
 func (cfg *apiConfig) GetHits() int {
