@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/benskia/Chirpy/internal/database"
@@ -58,22 +59,41 @@ func (cfg *apiConfig) resetHandle(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
+func (cfg *apiConfig) getChirp(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	targetID, err := strconv.Atoi(r.PathValue("chirpID"))
+	if err != nil {
+		log.Println("Error converting ID to integer for getChirp: ", err)
+	}
+	chirps, err := cfg.db.GetChirps()
+	if err != nil {
+		log.Println("Error retrieving chirps for getChirp: ", err)
+	}
+	for _, chirp := range chirps {
+		if chirp.ID == targetID {
+			respondWithJSON(w, http.StatusOK, chirp)
+			return
+		}
+	}
+	respondWithError(w, http.StatusNotFound, "Chirp not found")
+}
+
 func (cfg *apiConfig) getChirps(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	chirps, err := cfg.db.GetChirps()
 	if err != nil {
-		log.Println("Error retrieving chirps: ", err)
+		log.Println("Error retrieving chirps for getChirps: ", err)
 		return
 	}
 	encodedChirps, err := json.Marshal(chirps)
 	if err != nil {
-		log.Println("Error marshalling chirps: ", err)
+		log.Println("Error marshalling chirps for getChirps: ", err)
 		return
 	}
 	_, err = w.Write(encodedChirps)
 	if err != nil {
-		log.Println("Error writing chirps: ", err)
+		log.Println("Error writing chirps for getChirps: ", err)
 	}
 }
 
@@ -172,6 +192,8 @@ func StartChirpyServer() {
 	mux.HandleFunc("GET /api/healthz", readinessHandle)
 	mux.HandleFunc("GET /api/chirps", apiCfg.getChirps)
 	mux.HandleFunc("POST /api/chirps", apiCfg.postChirp)
+	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getChirp)
+	mux.HandleFunc("POST /api/users", apiCfg.postUser)
 
 	srv := &http.Server{Handler: mux, Addr: localHost}
 	if err := srv.ListenAndServe(); err != nil {
