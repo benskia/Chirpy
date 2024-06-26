@@ -3,6 +3,7 @@ package chirpyserver
 import (
 	"encoding/json"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 
@@ -101,6 +102,7 @@ func StartChirpyServer() {
 	mux.HandleFunc("POST /api/chirps", apiCfg.postChirp)
 	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getChirp)
 	mux.HandleFunc("POST /api/users", apiCfg.postUser)
+	mux.HandleFunc("POST /api/login", apiCfg.loginUser)
 
 	srv := &http.Server{Handler: mux, Addr: localHost}
 	if err := srv.ListenAndServe(); err != nil {

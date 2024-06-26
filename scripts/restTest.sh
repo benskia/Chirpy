@@ -11,4 +11,13 @@ curl -v --header "Content-Type: application/json" \
   --request GET \
   http://localhost:8080/api/chirps
 
+curl -v --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"email":"userOne@example.com"}' \
+  http://localhost:8080/api/users
+
+curl -v --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"email":"userTwo@example.com"}' \
+  http://localhost:8080/api/users
 

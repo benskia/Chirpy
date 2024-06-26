@@ -5,17 +5,24 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
+
+const internalErrorMsg string = "Something went wrong"
 
 func (cfg *apiConfig) getChirp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	targetID, err := strconv.Atoi(r.PathValue("chirpID"))
 	if err != nil {
 		log.Println("Error converting ID to integer for getChirp: ", err)
+		respondWithError(w, http.StatusInternalServerError, internalErrorMsg)
+		return
 	}
 	chirps, err := cfg.db.GetChirps()
 	if err != nil {
 		log.Println("Error retrieving chirps for getChirp: ", err)
+		respondWithError(w, http.StatusInternalServerError, internalErrorMsg)
+		return
 	}
 	for _, chirp := range chirps {
 		if chirp.ID == targetID {
@@ -32,16 +39,19 @@ func (cfg *apiConfig) getChirps(w http.ResponseWriter, r *http.Request) {
 	chirps, err := cfg.db.GetChirps()
 	if err != nil {
 		log.Println("Error retrieving chirps for getChirps: ", err)
+		respondWithError(w, http.StatusInternalServerError, internalErrorMsg)
 		return
 	}
 	encodedChirps, err := json.Marshal(chirps)
 	if err != nil {
 		log.Println("Error marshalling chirps for getChirps: ", err)
+		respondWithError(w, http.StatusInternalServerError, internalErrorMsg)
 		return
 	}
 	_, err = w.Write(encodedChirps)
 	if err != nil {
 		log.Println("Error writing chirps for getChirps: ", err)
+		respondWithError(w, http.StatusInternalServerError, internalErrorMsg)
 	}
 }
 
@@ -56,7 +66,7 @@ func (cfg *apiConfig) postChirp(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&params)
 	if err != nil {
 		log.Println("Error decoding parameters: ", err)
-		respondWithError(w, http.StatusInternalServerError, "Something went wrong")
+		respondWithError(w, http.StatusInternalServerError, internalErrorMsg)
 		return
 	}
 
@@ -71,6 +81,7 @@ func (cfg *apiConfig) postChirp(w http.ResponseWriter, r *http.Request) {
 	chirp, err := cfg.db.CreateChirp(cleanedBody)
 	if err != nil {
 		log.Println("Error creating chirp: ", err)
+		respondWithError(w, http.StatusInternalServerError, internalErrorMsg)
 		return
 	}
 	respondWithJSON(w, http.StatusCreated, chirp)

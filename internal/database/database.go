@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
-	"sort"
 	"sync"
 )
 
@@ -18,57 +17,12 @@ type DBStructure struct {
 	Users  map[int]User  `json:"users"`
 }
 
-type Chirp struct {
-	ID   int    `json:"id"`
-	Body string `json:"body"`
-}
-
-type User struct {
-	ID    int    `json:"id"`
-	Email string `json:"email"`
-}
-
 func NewDB(path string) (*DB, error) {
 	db := &DB{
 		path: path,
 		mux:  &sync.RWMutex{},
 	}
 	return db, db.ensureDB()
-}
-
-func (db *DB) CreateChirp(body string) (Chirp, error) {
-	dbStructure, err := db.loadDB()
-	if err != nil {
-		return Chirp{}, err
-	}
-	index := len(dbStructure.Chirps) + 1
-	newChirp := Chirp{
-		ID:   index,
-		Body: body,
-	}
-	dbStructure.Chirps[index] = newChirp
-	err = db.writeDB(dbStructure)
-	if err != nil {
-		return Chirp{}, err
-	}
-	return newChirp, nil
-}
-
-func (db *DB) GetChirps() ([]Chirp, error) {
-	db.mux.RLock()
-	loadedDB, err := db.loadDB()
-	db.mux.RUnlock()
-	if err != nil {
-		return []Chirp{}, err
-	}
-	chirps := []Chirp{}
-	for index, chirp := range loadedDB.Chirps {
-		chirps = append(chirps, Chirp{index, chirp.Body})
-	}
-	sort.Slice(chirps, func(i, j int) bool {
-		return chirps[i].ID < chirps[j].ID
-	})
-	return chirps, nil
 }
 
 func (db *DB) ensureDB() error {
