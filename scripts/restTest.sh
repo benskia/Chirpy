@@ -13,11 +13,11 @@ curl -v --header "Content-Type: application/json" \
 
 curl -v --header "Content-Type: application/json" \
   --request POST \
-  --data '{"email":"userOne@example.com"}' \
+  --data '{"email":"userTwo@example.com", "password":"123456"}' \
   http://localhost:8080/api/users
 
 curl -v --header "Content-Type: application/json" \
   --request POST \
-  --data '{"email":"userTwo@example.com"}' \
-  http://localhost:8080/api/users
+  --data '{"email":"userTwo@example.com", "password":"123456"}' \
+  http://localhost:8080/api/login
 

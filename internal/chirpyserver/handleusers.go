@@ -63,5 +63,5 @@ func (cfg *apiConfig) loginUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	respondWithError(w, http.StatusBadRequest, "Invalid username/password")
+	respondWithError(w, http.StatusUnauthorized, "Invalid username/password")
 }

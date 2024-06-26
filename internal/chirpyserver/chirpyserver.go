@@ -3,7 +3,6 @@ package chirpyserver
 import (
 	"encoding/json"
 	"html/template"
-	"io"
 	"log"
 	"net/http"
 
