@@ -11,25 +11,20 @@ type User struct {
 	ID       int    `json:"id"`
 	Email    string `json:"email"`
 	Password []byte `json:"password"`
+	Token    string `json:"token"`
 }
 
-type UserResponse struct {
-	ID    int    `json:"id"`
-	Email string `json:"email"`
-	Token string `json:"token"`
-}
-
-func (db *DB) CreateUser(email, password string) (UserResponse, error) {
+func (db *DB) CreateUser(email, password string) (User, error) {
 	db.mux.Lock()
 	defer db.mux.Unlock()
 	dbStructure, err := db.loadDB()
 	if err != nil {
-		return UserResponse{}, err
+		return User{}, err
 	}
 	index := len(dbStructure.Users) + 1
 	bcryptedPass, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return UserResponse{}, err
+		return User{}, err
 	}
 	newUser := User{
 		ID:       index,
@@ -39,9 +34,9 @@ func (db *DB) CreateUser(email, password string) (UserResponse, error) {
 	dbStructure.Users[index] = newUser
 	err = db.writeDB(dbStructure)
 	if err != nil {
-		return UserResponse{}, err
+		return User{}, err
 	}
-	return UserResponse{
+	return User{
 		ID:    index,
 		Email: email,
 	}, nil
@@ -56,7 +51,7 @@ func (db *DB) GetUsers() ([]User, error) {
 	}
 	users := []User{}
 	for index, user := range loadedDB.Users {
-		users = append(users, User{index, user.Email, user.Password})
+		users = append(users, User{index, user.Email, user.Password, ""})
 	}
 	sort.Slice(users, func(i, j int) bool {
 		return users[i].ID < users[j].ID
@@ -75,5 +70,6 @@ func (db *DB) UpdateUser(user User) error {
 		return errors.New("Failed to update: User not found.")
 	}
 	dbStructure.Users[user.ID] = user
+	db.writeDB(dbStructure)
 	return nil
 }

@@ -14,6 +14,10 @@ import (
 )
 
 func (cfg *apiConfig) postUser(w http.ResponseWriter, r *http.Request) {
+	type response struct {
+		ID    int    `json:"id"`
+		Email string `json:"email"`
+	}
 	type parameters struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -33,12 +37,24 @@ func (cfg *apiConfig) postUser(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, internalErrorMsg)
 		return
 	}
-	respondWithJSON(w, http.StatusCreated, user)
+	respondWithJSON(w, http.StatusCreated, response{
+		ID:    user.ID,
+		Email: user.Email,
+	})
 }
 
 func (cfg *apiConfig) putUser(w http.ResponseWriter, r *http.Request) {
+	type response struct {
+		ID    int    `json:"id"`
+		Email string `json:"email"`
+	}
+	type parameters struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 	authHeader := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-	token, err := jwt.ParseWithClaims(authHeader, jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
+	claims := jwt.RegisteredClaims{}
+	token, err := jwt.ParseWithClaims(authHeader, &claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(cfg.secret), nil
 	})
 	if err != nil {
@@ -46,15 +62,43 @@ func (cfg *apiConfig) putUser(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusUnauthorized, "Invalid authorization token")
 		return
 	}
-	id, err := token.Claims.GetSubject()
+	subject, err := token.Claims.GetSubject()
 	if err != nil {
 		log.Println("Error getting subect from claims: ", err)
 		respondWithError(w, http.StatusInternalServerError, internalErrorMsg)
 		return
 	}
+	id, err := strconv.Atoi(subject)
+	if err != nil {
+		log.Println("Error converting claim subject to int ID: ", err)
+		respondWithError(w, http.StatusInternalServerError, internalErrorMsg)
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	params := parameters{}
+	err = decoder.Decode(&params)
+	if err != nil {
+		log.Println("Error decoding parameters: ", err)
+		respondWithError(w, http.StatusBadRequest, internalErrorMsg)
+		return
+	}
+	cfg.db.UpdateUser(database.User{
+		ID:       id,
+		Email:    params.Email,
+		Password: []byte(params.Password),
+	})
+	respondWithJSON(w, http.StatusOK, response{
+		ID:    id,
+		Email: params.Email,
+	})
 }
 
 func (cfg *apiConfig) loginUser(w http.ResponseWriter, r *http.Request) {
+	type response struct {
+		ID    int    `json:"id"`
+		Email string `json:"email"`
+		Token string `json:"token"`
+	}
 	type parameters struct {
 		Email          string        `json:"email"`
 		Password       string        `json:"password"`
@@ -96,12 +140,11 @@ func (cfg *apiConfig) loginUser(w http.ResponseWriter, r *http.Request) {
 				respondWithError(w, http.StatusInternalServerError, internalErrorMsg)
 				return
 			}
-			userResponse := database.UserResponse{
+			respondWithJSON(w, http.StatusOK, response{
 				ID:    user.ID,
 				Email: user.Email,
 				Token: signedToken,
-			}
-			respondWithJSON(w, http.StatusOK, userResponse)
+			})
 			return
 		}
 	}
