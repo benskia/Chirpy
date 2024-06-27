@@ -102,6 +102,7 @@ func StartChirpyServer(secret string) {
 	mux.HandleFunc("POST /api/chirps", apiCfg.postChirp)
 	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getChirp)
 	mux.HandleFunc("POST /api/users", apiCfg.postUser)
+	mux.HandleFunc("PUT /api/users", apiCfg.putUser)
 	mux.HandleFunc("POST /api/login", apiCfg.loginUser)
 
 	srv := &http.Server{Handler: mux, Addr: localHost}

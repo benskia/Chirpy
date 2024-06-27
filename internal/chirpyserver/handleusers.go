@@ -32,10 +32,15 @@ func (cfg *apiConfig) postUser(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusCreated, user)
 }
 
+func (cfg *apiConfig) putUser(w http.ResponseWriter, r *http.Request) {
+	return
+}
+
 func (cfg *apiConfig) loginUser(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email          string `json:"email"`
+		Password       string `json:"password"`
+		ExpirationSecs int    `json:"expires_in_seconds"`
 	}
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
