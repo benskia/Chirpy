@@ -8,6 +8,8 @@ type Chirp struct {
 }
 
 func (db *DB) CreateChirp(body string) (Chirp, error) {
+	db.mux.Lock()
+	defer db.mux.Unlock()
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return Chirp{}, err
@@ -26,6 +28,8 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 }
 
 func (db *DB) GetChirps() ([]Chirp, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
 	loadedDB, err := db.loadDB()
 	if err != nil {
 		return []Chirp{}, err

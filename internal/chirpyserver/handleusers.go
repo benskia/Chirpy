@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/benskia/Chirpy/internal/database"
@@ -36,7 +37,21 @@ func (cfg *apiConfig) postUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) putUser(w http.ResponseWriter, r *http.Request) {
-	return
+	authHeader := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	token, err := jwt.ParseWithClaims(authHeader, jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(cfg.secret), nil
+	})
+	if err != nil {
+		log.Println("Error parsing claims: ", err)
+		respondWithError(w, http.StatusUnauthorized, "Invalid authorization token")
+		return
+	}
+	id, err := token.Claims.GetSubject()
+	if err != nil {
+		log.Println("Error getting subect from claims: ", err)
+		respondWithError(w, http.StatusInternalServerError, internalErrorMsg)
+		return
+	}
 }
 
 func (cfg *apiConfig) loginUser(w http.ResponseWriter, r *http.Request) {

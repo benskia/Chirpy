@@ -38,8 +38,6 @@ func (db *DB) ensureDB() error {
 }
 
 func (db *DB) loadDB() (DBStructure, error) {
-	db.mux.RLock()
-	defer db.mux.RUnlock()
 	dbStructure := DBStructure{}
 	f, err := os.ReadFile(db.path)
 	if err != nil {
@@ -50,8 +48,6 @@ func (db *DB) loadDB() (DBStructure, error) {
 }
 
 func (db *DB) writeDB(dbStructure DBStructure) error {
-	db.mux.Lock()
-	defer db.mux.Unlock()
 	dbToWrite, err := json.Marshal(dbStructure)
 	if err != nil {
 		return err

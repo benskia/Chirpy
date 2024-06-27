@@ -21,3 +21,9 @@ curl -v --header "Content-Type: application/json" \
   --data '{"email":"userTwo@example.com", "password":"123456"}' \
   http://localhost:8080/api/login
 
+curl -v --header "Content-Type: application/json" \
+  --request PUT \
+  --header 'Authorization: Bearer abcdef123456' \
+  --data '{"email":"userTwo@example.com", "password":"123456"' \
+  http://localhost:8080/api/users
+

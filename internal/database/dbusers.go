@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"sort"
 
 	"golang.org/x/crypto/bcrypt"
@@ -19,6 +20,8 @@ type UserResponse struct {
 }
 
 func (db *DB) CreateUser(email, password string) (UserResponse, error) {
+	db.mux.Lock()
+	defer db.mux.Unlock()
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return UserResponse{}, err
@@ -45,6 +48,8 @@ func (db *DB) CreateUser(email, password string) (UserResponse, error) {
 }
 
 func (db *DB) GetUsers() ([]User, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
 	loadedDB, err := db.loadDB()
 	if err != nil {
 		return []User{}, err
@@ -57,4 +62,18 @@ func (db *DB) GetUsers() ([]User, error) {
 		return users[i].ID < users[j].ID
 	})
 	return users, nil
+}
+
+func (db *DB) UpdateUser(user User) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+	if _, ok := dbStructure.Users[user.ID]; !ok {
+		return errors.New("Failed to update: User not found.")
+	}
+	dbStructure.Users[user.ID] = user
+	return nil
 }
