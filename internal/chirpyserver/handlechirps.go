@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/benskia/Chirpy/internal/database"
 )
 
 const internalErrorMsg string = "Something went wrong"
@@ -34,8 +36,10 @@ func (cfg *apiConfig) getChirp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) getChirps(w http.ResponseWriter, r *http.Request) {
+	type response struct {
+		Chirps []database.Chirp `json:"chirps"`
+	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 	chirps, err := cfg.db.GetChirps()
 	if err != nil {
 		log.Println("Error retrieving chirps for getChirps: ", err)
@@ -53,6 +57,7 @@ func (cfg *apiConfig) getChirps(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error writing chirps for getChirps: ", err)
 		respondWithError(w, http.StatusInternalServerError, internalErrorMsg)
 	}
+	respondWithJSON(w, http.StatusOK, response{Chirps: chirps})
 }
 
 func (cfg *apiConfig) postChirp(w http.ResponseWriter, r *http.Request) {

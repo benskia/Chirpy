@@ -82,10 +82,11 @@ func (cfg *apiConfig) putUser(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, internalErrorMsg)
 		return
 	}
+	newPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
 	cfg.db.UpdateUser(database.User{
 		ID:       id,
 		Email:    params.Email,
-		Password: []byte(params.Password),
+		Password: newPassword,
 	})
 	respondWithJSON(w, http.StatusOK, response{
 		ID:    id,
