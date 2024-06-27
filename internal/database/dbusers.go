@@ -15,6 +15,7 @@ type User struct {
 type UserResponse struct {
 	ID    int    `json:"id"`
 	Email string `json:"email"`
+	Token string `json:"token"`
 }
 
 func (db *DB) CreateUser(email, password string) (UserResponse, error) {
