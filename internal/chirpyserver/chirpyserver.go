@@ -19,14 +19,15 @@ type apiConfig struct {
 	fileserverHits int
 	chirpIdCounter int
 	db             *database.DB
+	secret         string
 }
 
-func NewApiConfig() *apiConfig {
+func NewApiConfig(secret string) *apiConfig {
 	db, err := database.NewDB("database.json")
 	if err != nil {
 		log.Fatal("Error connecting to database: ", err)
 	}
-	return &apiConfig{0, 1, db}
+	return &apiConfig{0, 1, db, secret}
 }
 
 func (cfg *apiConfig) GetHits() int {
@@ -89,8 +90,8 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	}
 }
 
-func StartChirpyServer() {
-	apiCfg := NewApiConfig()
+func StartChirpyServer(secret string) {
+	apiCfg := NewApiConfig(secret)
 	handler := http.StripPrefix("/app", http.FileServer(http.Dir(websitePath)))
 	mux := http.NewServeMux()
 	mux.Handle("GET /app/*", apiCfg.middlewareMetricsInc(handler))
